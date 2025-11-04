@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  signInWithCustomToken,
-  signInAnonymously,
-} from "firebase/auth";
-import { Download, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   Container,
   Paper,
@@ -25,43 +18,24 @@ import {
   TextInput,
   Textarea,
   FileInput,
-  Progress,
-  Alert,
-  Grid,
   Center,
   Box,
-  Divider,
-  ThemeIcon,
-  Flex,
   SimpleGrid,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { modals } from "@mantine/modals";
-import ExcelTable from "../components/ExcelTable";
-import ExcelLikeTable from "../components/ExcelLikeTable";
-import ImagePreview from "../components/ImagePreview";
 import FileUpload from "../components/FileUpload";
 import DataComparison from "../components/DataComparison";
-import ProjectManager from "../components/ProjectManager";
+import ExcelLikeTable from "../components/ExcelLikeTable";
 import ImageNamingModal from "../components/ImageNamingModal";
-import {
-  parseExcelFile,
-  exportToExcel,
-  exportToCSV,
-  compareDatasets,
-} from "../utils/excelUtils";
+import { parseExcelFile, exportToExcel } from "../utils/excelUtils";
 import {
   extractTextFromImageWithFailover,
   formatTextAsTableWithFailover,
   initializeApiKeyStatuses,
-  updateApiKeyStatus,
   getWorkingApiKey,
   type ApiKeyStatus,
 } from "../utils/aiUtils";
 import {
   createBatchJob,
-  getBatchJob,
-  getAllBatchJobs,
   cancelBatchJob,
   cleanupBatchJobs,
   type BatchJob,
@@ -70,33 +44,28 @@ import {
 import {
   createProject,
   getProjects,
-  getProject,
   addMasterData,
   getMasterData,
-  findMatches,
   exportToExcel as exportProjectToExcel,
   type Project,
   type MasterDataItem,
 } from "../utils/database";
-import DataMatching from "../components/DataMatching";
-import MasterDataManager from "../components/MasterDataManager";
 import Sidebar from "../components/Sidebar";
 import ProjectWorkflow from "../components/ProjectWorkflow";
 import SearchPage from "../components/SearchPage";
 
-// Firebase configuration - you'll need to add your actual config
-const firebaseConfig = {
-  // Add your Firebase config here
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id",
-};
+// Dataset interface
+interface Dataset {
+  id: string;
+  name: string;
+  description?: string;
+  fileCount: number;
+  totalRows: number;
+  created_at: string;
+  files: string[];
+}
 
-const initialAuthToken = null; // Add your auth token if needed
-const appId = "default-app-id";
+// Firebase configuration (currently disabled)
 
 // Image processing result interface
 interface ImageResult {
@@ -104,7 +73,7 @@ interface ImageResult {
   fileName: string;
   status: "pending" | "processing" | "completed" | "error";
   extractedText: string;
-  tableData: Record<string, any>[];
+  tableData: Record<string, unknown>[];
   error?: string;
   apiKeyUsed?: string;
   processingTime?: number;
@@ -119,10 +88,10 @@ export default function Home() {
   const [imageResults, setImageResults] = useState<ImageResult[]>([]);
 
   // Data management
-  const [tableData, setTableData] = useState<Record<string, any>[]>([]);
-  const [comparisonData, setComparisonData] = useState<Record<string, any>[]>(
-    []
-  );
+  const [tableData, setTableData] = useState<Record<string, unknown>[]>([]);
+  const [comparisonData, setComparisonData] = useState<
+    Record<string, unknown>[]
+  >([]);
   const [extractedText, setExtractedText] = useState("");
   const [tableName, setTableName] = useState("Extracted Data");
   const [comparisonTableName1, setComparisonTableName1] = useState("Dataset 1");
@@ -155,57 +124,21 @@ export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [masterData, setMasterData] = useState<MasterDataItem[]>([]);
-  const [correctedData, setCorrectedData] = useState<any[]>([]);
+  const [correctedData, setCorrectedData] = useState<Record<string, unknown>[]>(
+    []
+  );
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [excelFile, setExcelFile] = useState<File | null>(null);
-  const [datasets, setDatasets] = useState<any[]>([]);
-  const [selectedDataset, setSelectedDataset] = useState<any | null>(null);
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Firebase
-  const [db, setDb] = useState<any>(null);
-  const [auth, setAuth] = useState<any>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  // Firebase (currently disabled)
 
-  // Initialize Firebase and authenticate
-  useEffect(() => {
-    try {
-      // Temporarily disabled Firebase to prevent auth errors
-      // const app = initializeApp(firebaseConfig);
-      // const authInstance = getAuth(app);
-      // const dbInstance = getFirestore(app);
-
-      // const handleAuth = async () => {
-      //   try {
-      //     if (initialAuthToken) {
-      //       await signInWithCustomToken(authInstance, initialAuthToken);
-      //     } else {
-      //       await signInAnonymously(authInstance);
-      //     }
-      //     const user = authInstance.currentUser;
-      //     setUserId(user?.uid || null);
-      //   } catch (error) {
-      //     console.error("Firebase auth error:", error);
-      //     setUserId(null); // Fallback to null user ID on auth failure
-      //   } finally {
-      //     setIsAuthReady(true);
-      //   }
-      // };
-
-      // handleAuth();
-      // setAuth(authInstance);
-      // setDb(dbInstance);
-
-      // Set auth ready without Firebase
-      setIsAuthReady(true);
-    } catch (error) {
-      console.error("Firebase initialization failed:", error);
-    }
-  }, []);
+  // Firebase initialization (currently disabled)
 
   // Cleanup batch jobs on unmount
   useEffect(() => {
@@ -242,6 +175,7 @@ export default function Home() {
     if (currentProject) {
       loadMasterData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProject]);
 
   // Project Management Functions
@@ -293,7 +227,7 @@ export default function Home() {
     setMessage(`Selected project: ${project.name}`);
   };
 
-  const handleDataCorrected = (correctedData: any[]) => {
+  const handleDataCorrected = (correctedData: Record<string, unknown>[]) => {
     setCorrectedData(correctedData);
     setMessage(`Data corrected: ${correctedData.length} items updated`);
   };
@@ -354,7 +288,7 @@ export default function Home() {
   ) => {
     try {
       // Process files using backend API
-      let combinedData: any[] = [];
+      let combinedData: Record<string, unknown>[] = [];
 
       for (const file of files) {
         try {
@@ -430,7 +364,7 @@ export default function Home() {
     }
   };
 
-  const handleDatasetSelect = (dataset: any) => {
+  const handleDatasetSelect = (dataset: Dataset) => {
     setSelectedDataset(dataset);
     setMessage(`Selected dataset: ${dataset.name}`);
   };
@@ -448,16 +382,20 @@ export default function Home() {
       const datasetData = await response.json();
 
       // Convert dataset data to master data format
-      const masterDataItems = datasetData.data.map(
-        (item: any, index: number) => ({
-          item_description:
+      const masterDataItems: Omit<
+        MasterDataItem,
+        "id" | "created_at" | "updated_at"
+      >[] = (datasetData.data as Record<string, unknown>[]).map(
+        (item: Record<string, unknown>, index: number) => ({
+          item_description: String(
             item.Item_Description ||
-            item.item_description ||
-            `Item ${index + 1}`,
-          serial_number: item.Serial_Number || item.serial_number || "",
-          tag_number: item.Tag_Number || item.tag_number || "",
-          quantity: parseInt(item.Quantity || item.quantity || "1"),
-          status: item.Status || item.status || "New",
+              item.item_description ||
+              `Item ${index + 1}`
+          ),
+          serial_number: String(item.Serial_Number || item.serial_number || ""),
+          tag_number: String(item.Tag_Number || item.tag_number || ""),
+          quantity: parseInt(String(item.Quantity || item.quantity || "1"), 10),
+          status: String(item.Status || item.status || "New"),
         })
       );
 
@@ -844,7 +782,7 @@ export default function Home() {
 
     let processedCount = 0;
     const totalFiles = files.length;
-    let allExtractedData: Record<string, any>[] = [];
+    let allExtractedData: Record<string, unknown>[] = [];
 
     for (const batch of batches) {
       const promises = batch.map(async (file, batchIndex) => {
@@ -872,7 +810,7 @@ export default function Home() {
           const processingTime = Date.now() - startTime;
 
           // Automatically try to format as table
-          let tableData: Record<string, any>[] = [];
+          let tableData: Record<string, unknown>[] = [];
           try {
             tableData = await formatTextAsTableWithFailover(
               extractedText,
@@ -1007,7 +945,7 @@ export default function Home() {
       <Box
         style={{
           flex: 1,
-          marginLeft: isSidebarCollapsed ? "60px" : "280px", // Dynamic margin based on sidebar state
+          marginLeft: isSidebarCollapsed ? "50px" : "230px", // Dynamic margin based on sidebar state
           transition: "margin-left 0.3s ease",
           minHeight: "100vh",
         }}
@@ -1748,10 +1686,10 @@ export default function Home() {
                                   result.status === "completed"
                                     ? "bg-green-100 text-green-800"
                                     : result.status === "failed"
-                                    ? "bg-red-100 text-red-800"
-                                    : result.status === "processing"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-gray-100 text-gray-800"
+                                      ? "bg-red-100 text-red-800"
+                                      : result.status === "processing"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-gray-100 text-gray-800"
                                 }`}
                               >
                                 {result.status}

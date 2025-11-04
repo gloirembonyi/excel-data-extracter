@@ -15,13 +15,11 @@ The system uses **Neon DB** (PostgreSQL) to store:
 ### 1. Neon DB Setup
 
 1. **Create Neon Account**:
-
    - Go to [neon.tech](https://neon.tech)
    - Sign up for a free account
    - Create a new project
 
 2. **Get Database URL**:
-
    - Copy your connection string from Neon dashboard
    - It should look like: `postgresql://username:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require`
 

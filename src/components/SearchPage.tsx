@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Paper,
   Stack,
@@ -26,8 +26,8 @@ import {
   NumberInput,
   MultiSelect,
   Chip,
-  Tooltip
-} from '@mantine/core';
+  Tooltip,
+} from "@mantine/core";
 import {
   Search,
   Filter,
@@ -43,9 +43,9 @@ import {
   Hash,
   Tag,
   Cpu,
-  Monitor
-} from 'lucide-react';
-import { notifications } from '@mantine/notifications';
+  Monitor,
+} from "lucide-react";
+import { notifications } from "@mantine/notifications";
 
 interface SearchResult {
   id: string;
@@ -84,7 +84,7 @@ interface SearchPageProps {
 const SearchPage: React.FC<SearchPageProps> = ({
   datasets,
   projects,
-  onExportResults
+  onExportResults,
 }) => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -94,34 +94,34 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFormat, setExportFormat] = useState('excel');
-  const [exportFileName, setExportFileName] = useState('search_results');
+  const [exportFormat, setExportFormat] = useState("excel");
+  const [exportFileName, setExportFileName] = useState("search_results");
 
   const [filters, setFilters] = useState<SearchFilters>({
-    query: '',
-    item_type: '',
-    status: '',
-    source: '',
-    date_from: '',
-    date_to: '',
+    query: "",
+    item_type: "",
+    status: "",
+    source: "",
+    date_from: "",
+    date_to: "",
     min_quantity: null,
     max_quantity: null,
     exact_match: false,
-    case_sensitive: false
+    case_sensitive: false,
   });
 
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showDatasets, setShowDatasets] = useState(false);
   const [bulkSearchMode, setBulkSearchMode] = useState(false);
-  const [bulkSearchText, setBulkSearchText] = useState('');
+  const [bulkSearchText, setBulkSearchText] = useState("");
 
   // Bulk search function
   const handleBulkSearch = async () => {
     if (!bulkSearchText.trim()) {
       notifications.show({
-        title: 'Bulk Search Required',
-        message: 'Please paste codifications or serial numbers to search',
-        color: 'orange'
+        title: "Bulk Search Required",
+        message: "Please paste codifications or serial numbers to search",
+        color: "orange",
       });
       return;
     }
@@ -130,23 +130,23 @@ const SearchPage: React.FC<SearchPageProps> = ({
     try {
       // Split the bulk text into individual search terms
       const searchTerms = bulkSearchText
-        .split('\n')
-        .map(term => term.trim())
-        .filter(term => term.length > 0);
+        .split("\n")
+        .map((term) => term.trim())
+        .filter((term) => term.length > 0);
 
       if (searchTerms.length === 0) {
         notifications.show({
-          title: 'No Valid Terms',
-          message: 'Please enter valid codifications or serial numbers',
-          color: 'orange'
+          title: "No Valid Terms",
+          message: "Please enter valid codifications or serial numbers",
+          color: "orange",
         });
         return;
       }
 
-      const response = await fetch('http://localhost:8000/bulk-search', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8000/bulk-search", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           search_terms: searchTerms,
@@ -154,12 +154,12 @@ const SearchPage: React.FC<SearchPageProps> = ({
           status: filters.status,
           source: filters.source,
           exact_match: filters.exact_match,
-          case_sensitive: filters.case_sensitive
-        })
+          case_sensitive: filters.case_sensitive,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Bulk search failed');
+        throw new Error("Bulk search failed");
       }
 
       const data = await response.json();
@@ -169,16 +169,16 @@ const SearchPage: React.FC<SearchPageProps> = ({
       setCurrentPage(1);
 
       notifications.show({
-        title: 'Bulk Search Complete',
+        title: "Bulk Search Complete",
         message: `Found ${data.total_results || 0} results for ${searchTerms.length} search terms`,
-        color: 'green'
+        color: "green",
       });
     } catch (error) {
-      console.error('Bulk search error:', error);
+      console.error("Bulk search error:", error);
       notifications.show({
-        title: 'Bulk Search Failed',
-        message: 'Unable to perform bulk search. Please try again.',
-        color: 'red'
+        title: "Bulk Search Failed",
+        message: "Unable to perform bulk search. Please try again.",
+        color: "red",
       });
     } finally {
       setIsSearching(false);
@@ -192,31 +192,36 @@ const SearchPage: React.FC<SearchPageProps> = ({
       return;
     }
 
-    if (!filters.query.trim() && !filters.item_type && !filters.status && !filters.source) {
+    if (
+      !filters.query.trim() &&
+      !filters.item_type &&
+      !filters.status &&
+      !filters.source
+    ) {
       notifications.show({
-        title: 'Search Required',
-        message: 'Please enter a search term or select filters',
-        color: 'orange'
+        title: "Search Required",
+        message: "Please enter a search term or select filters",
+        color: "orange",
       });
       return;
     }
 
     setIsSearching(true);
     try {
-      const response = await fetch('http://localhost:8000/search', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8000/search", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...filters,
           page,
-          limit: 20
-        })
+          limit: 20,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Search failed');
+        throw new Error("Search failed");
       }
 
       const data = await response.json();
@@ -226,21 +231,24 @@ const SearchPage: React.FC<SearchPageProps> = ({
       setCurrentPage(page);
 
       // Add to search history
-      if (filters.query.trim() && !searchHistory.includes(filters.query.trim())) {
-        setSearchHistory(prev => [filters.query.trim(), ...prev.slice(0, 9)]);
+      if (
+        filters.query.trim() &&
+        !searchHistory.includes(filters.query.trim())
+      ) {
+        setSearchHistory((prev) => [filters.query.trim(), ...prev.slice(0, 9)]);
       }
 
       notifications.show({
-        title: 'Search Complete',
+        title: "Search Complete",
         message: `Found ${data.total_results || 0} results`,
-        color: 'green'
+        color: "green",
       });
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       notifications.show({
-        title: 'Search Failed',
-        message: 'Unable to search data. Please try again.',
-        color: 'red'
+        title: "Search Failed",
+        message: "Unable to search data. Please try again.",
+        color: "red",
       });
     } finally {
       setIsSearching(false);
@@ -250,18 +258,18 @@ const SearchPage: React.FC<SearchPageProps> = ({
   // Clear search
   const handleClearSearch = () => {
     setFilters({
-      query: '',
-      item_type: '',
-      status: '',
-      source: '',
-      date_from: '',
-      date_to: '',
+      query: "",
+      item_type: "",
+      status: "",
+      source: "",
+      date_from: "",
+      date_to: "",
       min_quantity: null,
       max_quantity: null,
       exact_match: false,
-      case_sensitive: false
+      case_sensitive: false,
     });
-    setBulkSearchText('');
+    setBulkSearchText("");
     setSearchResults([]);
     setTotalResults(0);
     setCurrentPage(1);
@@ -272,52 +280,55 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const handleExportResults = async () => {
     if (searchResults.length === 0) {
       notifications.show({
-        title: 'No Results',
-        message: 'No results to export',
-        color: 'orange'
+        title: "No Results",
+        message: "No results to export",
+        color: "orange",
       });
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:8000/export-search-results', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          results: searchResults,
-          format: exportFormat,
-          filename: exportFileName
-        })
-      });
+      const response = await fetch(
+        "http://localhost:8000/export-search-results",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            results: searchResults,
+            format: exportFormat,
+            filename: exportFileName,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Export failed');
+        throw new Error("Export failed");
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `${exportFileName}.${exportFormat === 'excel' ? 'xlsx' : 'csv'}`;
+      a.download = `${exportFileName}.${exportFormat === "excel" ? "xlsx" : "csv"}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
       notifications.show({
-        title: 'Export Complete',
-        message: `Results exported as ${exportFileName}.${exportFormat === 'excel' ? 'xlsx' : 'csv'}`,
-        color: 'green'
+        title: "Export Complete",
+        message: `Results exported as ${exportFileName}.${exportFormat === "excel" ? "xlsx" : "csv"}`,
+        color: "green",
       });
       setShowExportModal(false);
     } catch (error) {
-      console.error('Export error:', error);
+      console.error("Export error:", error);
       notifications.show({
-        title: 'Export Failed',
-        message: 'Unable to export results. Please try again.',
-        color: 'red'
+        title: "Export Failed",
+        message: "Unable to export results. Please try again.",
+        color: "red",
       });
     }
   };
@@ -325,9 +336,13 @@ const SearchPage: React.FC<SearchPageProps> = ({
   // Get item type icon
   const getItemTypeIcon = (itemDescription: string) => {
     const desc = itemDescription.toLowerCase();
-    if (desc.includes('cpu') || desc.includes('computer')) {
+    if (desc.includes("cpu") || desc.includes("computer")) {
       return <Cpu size={16} />;
-    } else if (desc.includes('screen') || desc.includes('monitor') || desc.includes('display')) {
+    } else if (
+      desc.includes("screen") ||
+      desc.includes("monitor") ||
+      desc.includes("display")
+    ) {
       return <Monitor size={16} />;
     }
     return <Database size={16} />;
@@ -336,50 +351,63 @@ const SearchPage: React.FC<SearchPageProps> = ({
   // Get source color
   const getSourceColor = (source: string) => {
     switch (source) {
-      case 'master_data': return 'blue';
-      case 'dataset': return 'green';
-      case 'extracted': return 'orange';
-      default: return 'gray';
+      case "master_data":
+        return "blue";
+      case "dataset":
+        return "green";
+      case "extracted":
+        return "orange";
+      default:
+        return "gray";
     }
   };
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'new': return 'green';
-      case 'active': return 'blue';
-      case 'inactive': return 'gray';
-      case 'maintenance': return 'yellow';
-      case 'retired': return 'red';
-      default: return 'gray';
+      case "new":
+        return "green";
+      case "active":
+        return "blue";
+      case "inactive":
+        return "gray";
+      case "maintenance":
+        return "yellow";
+      case "retired":
+        return "red";
+      default:
+        return "gray";
     }
   };
 
   // Delete dataset
   const handleDeleteDataset = async (datasetId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/datasets/${datasetId}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `http://localhost:8000/datasets/${datasetId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete dataset');
+        throw new Error("Failed to delete dataset");
       }
 
       notifications.show({
-        title: 'Dataset Deleted',
-        message: 'Dataset has been successfully deleted',
-        color: 'green'
+        title: "Dataset Deleted",
+        message: "Dataset has been successfully deleted",
+        color: "green",
       });
 
       // Refresh datasets by reloading the page or calling a refresh function
       window.location.reload();
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error("Delete error:", error);
       notifications.show({
-        title: 'Delete Failed',
-        message: 'Unable to delete dataset. Please try again.',
-        color: 'red'
+        title: "Delete Failed",
+        message: "Unable to delete dataset. Please try again.",
+        color: "red",
       });
     }
   };
@@ -391,8 +419,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
         shadow="sm"
         p="lg"
         style={{
-          background: 'linear-gradient(135deg, #B4D4FF 0%, #86B6F6 100%)',
-          border: '1px solid #86B6F6'
+          background: "linear-gradient(135deg, #B4D4FF 0%, #86B6F6 100%)",
+          border: "1px solid #86B6F6",
         }}
       >
         <Stack gap="md">
@@ -400,9 +428,9 @@ const SearchPage: React.FC<SearchPageProps> = ({
             <Title
               order={2}
               style={{
-                color: '#176B87',
-                fontFamily: 'Inter Tight, sans-serif',
-                fontWeight: 700
+                color: "#176B87",
+                fontFamily: "Inter Tight, sans-serif",
+                fontWeight: 700,
               }}
             >
               🔍 Search Datasets
@@ -410,36 +438,36 @@ const SearchPage: React.FC<SearchPageProps> = ({
             <Group gap="sm">
               <Button
                 onClick={() => setBulkSearchMode(!bulkSearchMode)}
-                variant={bulkSearchMode ? 'filled' : 'outline'}
+                variant={bulkSearchMode ? "filled" : "outline"}
                 leftSection={<FileSpreadsheet size={16} />}
                 style={{
-                  borderColor: '#176B87',
-                  color: bulkSearchMode ? 'white' : '#176B87',
-                  backgroundColor: bulkSearchMode ? '#176B87' : 'transparent'
+                  borderColor: "#176B87",
+                  color: bulkSearchMode ? "white" : "#176B87",
+                  backgroundColor: bulkSearchMode ? "#176B87" : "transparent",
                 }}
               >
-                {bulkSearchMode ? 'Single Search' : 'Bulk Search'}
+                {bulkSearchMode ? "Single Search" : "Bulk Search"}
               </Button>
               <Button
                 onClick={() => setShowFilters(!showFilters)}
-                variant={showFilters ? 'filled' : 'outline'}
+                variant={showFilters ? "filled" : "outline"}
                 leftSection={<Filter size={16} />}
                 style={{
-                  borderColor: '#176B87',
-                  color: showFilters ? 'white' : '#176B87',
-                  backgroundColor: showFilters ? '#176B87' : 'transparent'
+                  borderColor: "#176B87",
+                  color: showFilters ? "white" : "#176B87",
+                  backgroundColor: showFilters ? "#176B87" : "transparent",
                 }}
               >
                 Filters
               </Button>
               <Button
                 onClick={() => setShowDatasets(!showDatasets)}
-                variant={showDatasets ? 'filled' : 'outline'}
+                variant={showDatasets ? "filled" : "outline"}
                 leftSection={<Database size={16} />}
                 style={{
-                  borderColor: '#176B87',
-                  color: showDatasets ? 'white' : '#176B87',
-                  backgroundColor: showDatasets ? '#176B87' : 'transparent'
+                  borderColor: "#176B87",
+                  color: showDatasets ? "white" : "#176B87",
+                  backgroundColor: showDatasets ? "#176B87" : "transparent",
                 }}
               >
                 Datasets
@@ -449,8 +477,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
                 variant="outline"
                 leftSection={<X size={16} />}
                 style={{
-                  borderColor: '#176B87',
-                  color: '#176B87'
+                  borderColor: "#176B87",
+                  color: "#176B87",
                 }}
               >
                 Clear
@@ -469,33 +497,34 @@ const SearchPage: React.FC<SearchPageProps> = ({
                 maxRows={12}
                 styles={{
                   input: {
-                    borderColor: '#86B6F6',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontSize: '14px',
-                    '&:focus': {
-                      borderColor: '#176B87'
-                    }
-                  }
+                    borderColor: "#86B6F6",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontSize: "14px",
+                    "&:focus": {
+                      borderColor: "#176B87",
+                    },
+                  },
                 }}
               />
               <Group gap="md" justify="space-between">
                 <Text
                   size="sm"
                   style={{
-                    color: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    opacity: 0.8
+                    color: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    opacity: 0.8,
                   }}
                 >
-                  💡 Tip: Copy a column from Excel and paste here. Each line will be searched separately.
+                  💡 Tip: Copy a column from Excel and paste here. Each line
+                  will be searched separately.
                 </Text>
                 <Button
                   onClick={handleBulkSearch}
                   loading={isSearching}
                   style={{
-                    backgroundColor: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    backgroundColor: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Bulk Search
@@ -507,36 +536,38 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <TextInput
                 placeholder="Search by serial number, tag number, description..."
                 value={filters.query}
-                onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, query: e.target.value }))
+                }
                 leftSection={<Search size={16} />}
                 rightSection={
                   <ActionIcon
                     onClick={() => handleSearch(1)}
                     loading={isSearching}
-                    style={{ color: '#176B87' }}
+                    style={{ color: "#176B87" }}
                   >
                     <Search size={16} />
                   </ActionIcon>
                 }
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch(1)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch(1)}
                 style={{ flex: 1 }}
                 styles={{
                   input: {
-                    borderColor: '#86B6F6',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    '&:focus': {
-                      borderColor: '#176B87'
-                    }
-                  }
+                    borderColor: "#86B6F6",
+                    fontFamily: "Inter Tight, sans-serif",
+                    "&:focus": {
+                      borderColor: "#176B87",
+                    },
+                  },
                 }}
               />
               <Button
                 onClick={() => handleSearch(1)}
                 loading={isSearching}
                 style={{
-                  backgroundColor: '#176B87',
-                  fontFamily: 'Inter Tight, sans-serif',
-                  fontWeight: 600
+                  backgroundColor: "#176B87",
+                  fontFamily: "Inter Tight, sans-serif",
+                  fontWeight: 600,
                 }}
               >
                 Search
@@ -550,10 +581,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <Text
                 size="sm"
                 style={{
-                  color: '#176B87',
-                  fontFamily: 'Inter Tight, sans-serif',
+                  color: "#176B87",
+                  fontFamily: "Inter Tight, sans-serif",
                   fontWeight: 600,
-                  marginBottom: '8px'
+                  marginBottom: "8px",
                 }}
               >
                 Recent Searches:
@@ -563,12 +594,12 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   <Chip
                     key={index}
                     onClick={() => {
-                      setFilters(prev => ({ ...prev, query: term }));
+                      setFilters((prev) => ({ ...prev, query: term }));
                       handleSearch(1);
                     }}
                     style={{
-                      fontFamily: 'Inter Tight, sans-serif',
-                      fontSize: '12px'
+                      fontFamily: "Inter Tight, sans-serif",
+                      fontSize: "12px",
                     }}
                   >
                     {term}
@@ -582,22 +613,22 @@ const SearchPage: React.FC<SearchPageProps> = ({
 
       {/* Advanced Filters */}
       {showFilters && (
-        <Paper shadow="sm" p="lg" style={{ border: '1px solid #86B6F6' }}>
+        <Paper shadow="sm" p="lg" style={{ border: "1px solid #86B6F6" }}>
           <Stack gap="md">
             <Group justify="space-between">
               <Title
                 order={3}
                 style={{
-                  color: '#176B87',
-                  fontFamily: 'Inter Tight, sans-serif',
-                  fontWeight: 600
+                  color: "#176B87",
+                  fontFamily: "Inter Tight, sans-serif",
+                  fontWeight: 600,
                 }}
               >
                 Advanced Filters
               </Title>
               <ActionIcon
                 onClick={() => setShowFilters(false)}
-                style={{ color: '#176B87' }}
+                style={{ color: "#176B87" }}
               >
                 <ChevronUp size={16} />
               </ActionIcon>
@@ -609,19 +640,21 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   label="Item Type"
                   placeholder="All types"
                   value={filters.item_type}
-                  onChange={(value) => setFilters(prev => ({ ...prev, item_type: value || '' }))}
+                  onChange={(value) =>
+                    setFilters((prev) => ({ ...prev, item_type: value || "" }))
+                  }
                   data={[
-                    { value: '', label: 'All Types' },
-                    { value: 'cpu', label: 'CPU' },
-                    { value: 'screen', label: 'Screen/Monitor' },
-                    { value: 'other', label: 'Other' }
+                    { value: "", label: "All Types" },
+                    { value: "cpu", label: "CPU" },
+                    { value: "screen", label: "Screen/Monitor" },
+                    { value: "other", label: "Other" },
                   ]}
                   styles={{
                     label: {
-                      color: '#176B87',
-                      fontFamily: 'Inter Tight, sans-serif',
-                      fontWeight: 600
-                    }
+                      color: "#176B87",
+                      fontFamily: "Inter Tight, sans-serif",
+                      fontWeight: 600,
+                    },
                   }}
                 />
               </Grid.Col>
@@ -630,21 +663,23 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   label="Status"
                   placeholder="All statuses"
                   value={filters.status}
-                  onChange={(value) => setFilters(prev => ({ ...prev, status: value || '' }))}
+                  onChange={(value) =>
+                    setFilters((prev) => ({ ...prev, status: value || "" }))
+                  }
                   data={[
-                    { value: '', label: 'All Statuses' },
-                    { value: 'new', label: 'New' },
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' },
-                    { value: 'maintenance', label: 'Maintenance' },
-                    { value: 'retired', label: 'Retired' }
+                    { value: "", label: "All Statuses" },
+                    { value: "new", label: "New" },
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" },
+                    { value: "maintenance", label: "Maintenance" },
+                    { value: "retired", label: "Retired" },
                   ]}
                   styles={{
                     label: {
-                      color: '#176B87',
-                      fontFamily: 'Inter Tight, sans-serif',
-                      fontWeight: 600
-                    }
+                      color: "#176B87",
+                      fontFamily: "Inter Tight, sans-serif",
+                      fontWeight: 600,
+                    },
                   }}
                 />
               </Grid.Col>
@@ -653,19 +688,21 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   label="Source"
                   placeholder="All sources"
                   value={filters.source}
-                  onChange={(value) => setFilters(prev => ({ ...prev, source: value || '' }))}
+                  onChange={(value) =>
+                    setFilters((prev) => ({ ...prev, source: value || "" }))
+                  }
                   data={[
-                    { value: '', label: 'All Sources' },
-                    { value: 'master_data', label: 'Master Data' },
-                    { value: 'dataset', label: 'Dataset' },
-                    { value: 'extracted', label: 'Extracted' }
+                    { value: "", label: "All Sources" },
+                    { value: "master_data", label: "Master Data" },
+                    { value: "dataset", label: "Dataset" },
+                    { value: "extracted", label: "Extracted" },
                   ]}
                   styles={{
                     label: {
-                      color: '#176B87',
-                      fontFamily: 'Inter Tight, sans-serif',
-                      fontWeight: 600
-                    }
+                      color: "#176B87",
+                      fontFamily: "Inter Tight, sans-serif",
+                      fontWeight: 600,
+                    },
                   }}
                 />
               </Grid.Col>
@@ -675,30 +712,40 @@ const SearchPage: React.FC<SearchPageProps> = ({
                     label="Min Quantity"
                     placeholder="Any"
                     value={filters.min_quantity ?? undefined}
-                    onChange={(value) => setFilters(prev => ({ ...prev, min_quantity: typeof value === 'string' ? null : value }))}
+                    onChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        min_quantity: typeof value === "string" ? null : value,
+                      }))
+                    }
                     min={0}
                     style={{ flex: 1 }}
                     styles={{
                       label: {
-                        color: '#176B87',
-                        fontFamily: 'Inter Tight, sans-serif',
-                        fontWeight: 600
-                      }
+                        color: "#176B87",
+                        fontFamily: "Inter Tight, sans-serif",
+                        fontWeight: 600,
+                      },
                     }}
                   />
                   <NumberInput
                     label="Max Quantity"
                     placeholder="Any"
                     value={filters.max_quantity ?? undefined}
-                    onChange={(value) => setFilters(prev => ({ ...prev, max_quantity: typeof value === 'string' ? null : value }))}
+                    onChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        max_quantity: typeof value === "string" ? null : value,
+                      }))
+                    }
                     min={0}
                     style={{ flex: 1 }}
                     styles={{
                       label: {
-                        color: '#176B87',
-                        fontFamily: 'Inter Tight, sans-serif',
-                        fontWeight: 600
-                      }
+                        color: "#176B87",
+                        fontFamily: "Inter Tight, sans-serif",
+                        fontWeight: 600,
+                      },
                     }}
                   />
                 </Group>
@@ -709,25 +756,35 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <Switch
                 label="Exact Match"
                 checked={filters.exact_match}
-                onChange={(event) => setFilters(prev => ({ ...prev, exact_match: event.currentTarget.checked }))}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    exact_match: event.currentTarget.checked,
+                  }))
+                }
                 styles={{
                   label: {
-                    color: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
-                  }
+                    color: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
+                  },
                 }}
               />
               <Switch
                 label="Case Sensitive"
                 checked={filters.case_sensitive}
-                onChange={(event) => setFilters(prev => ({ ...prev, case_sensitive: event.currentTarget.checked }))}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    case_sensitive: event.currentTarget.checked,
+                  }))
+                }
                 styles={{
                   label: {
-                    color: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
-                  }
+                    color: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
+                  },
                 }}
               />
             </Group>
@@ -737,22 +794,22 @@ const SearchPage: React.FC<SearchPageProps> = ({
 
       {/* Datasets Management */}
       {showDatasets && (
-        <Paper shadow="sm" p="lg" style={{ border: '1px solid #86B6F6' }}>
+        <Paper shadow="sm" p="lg" style={{ border: "1px solid #86B6F6" }}>
           <Stack gap="md">
             <Group justify="space-between">
               <Title
                 order={3}
                 style={{
-                  color: '#176B87',
-                  fontFamily: 'Inter Tight, sans-serif',
-                  fontWeight: 600
+                  color: "#176B87",
+                  fontFamily: "Inter Tight, sans-serif",
+                  fontWeight: 600,
                 }}
               >
                 Available Datasets
               </Title>
               <ActionIcon
                 onClick={() => setShowDatasets(false)}
-                style={{ color: '#176B87' }}
+                style={{ color: "#176B87" }}
               >
                 <ChevronUp size={16} />
               </ActionIcon>
@@ -764,8 +821,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   <Avatar
                     size="xl"
                     style={{
-                      backgroundColor: '#B4D4FF',
-                      color: '#176B87'
+                      backgroundColor: "#B4D4FF",
+                      color: "#176B87",
                     }}
                   >
                     <Database size={32} />
@@ -774,9 +831,9 @@ const SearchPage: React.FC<SearchPageProps> = ({
                     <Title
                       order={4}
                       style={{
-                        color: '#176B87',
-                        fontFamily: 'Inter Tight, sans-serif',
-                        fontWeight: 600
+                        color: "#176B87",
+                        fontFamily: "Inter Tight, sans-serif",
+                        fontWeight: 600,
                       }}
                     >
                       No Datasets Available
@@ -784,10 +841,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
                     <Text
                       size="sm"
                       style={{
-                        color: '#176B87',
+                        color: "#176B87",
                         opacity: 0.7,
-                        fontFamily: 'Inter Tight, sans-serif',
-                        textAlign: 'center'
+                        fontFamily: "Inter Tight, sans-serif",
+                        textAlign: "center",
                       }}
                     >
                       Upload Excel files to create datasets for searching
@@ -803,8 +860,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
                       shadow="sm"
                       p="md"
                       style={{
-                        border: '1px solid #B4D4FF',
-                        transition: 'all 0.2s ease'
+                        border: "1px solid #B4D4FF",
+                        transition: "all 0.2s ease",
                       }}
                       className="hover:shadow-md"
                     >
@@ -814,8 +871,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
                             <Avatar
                               size="md"
                               style={{
-                                backgroundColor: '#B4D4FF',
-                                color: '#176B87'
+                                backgroundColor: "#B4D4FF",
+                                color: "#176B87",
                               }}
                             >
                               <FileSpreadsheet size={16} />
@@ -824,9 +881,9 @@ const SearchPage: React.FC<SearchPageProps> = ({
                               <Text
                                 size="lg"
                                 style={{
-                                  color: '#176B87',
-                                  fontFamily: 'Inter Tight, sans-serif',
-                                  fontWeight: 600
+                                  color: "#176B87",
+                                  fontFamily: "Inter Tight, sans-serif",
+                                  fontWeight: 600,
                                 }}
                               >
                                 {dataset.name}
@@ -834,50 +891,42 @@ const SearchPage: React.FC<SearchPageProps> = ({
                               <Text
                                 size="xs"
                                 style={{
-                                  color: '#176B87',
+                                  color: "#176B87",
                                   opacity: 0.7,
-                                  fontFamily: 'Inter Tight, sans-serif'
+                                  fontFamily: "Inter Tight, sans-serif",
                                 }}
                               >
-                                {dataset.description || 'No description'}
+                                {dataset.description || "No description"}
                               </Text>
                             </Stack>
                           </Group>
                           <ActionIcon
                             onClick={() => handleDeleteDataset(dataset.id)}
                             style={{
-                              color: '#e74c3c',
-                              backgroundColor: 'rgba(231, 76, 60, 0.1)'
+                              color: "#e74c3c",
+                              backgroundColor: "rgba(231, 76, 60, 0.1)",
                             }}
                             radius="md"
                           >
                             <X size={16} />
                           </ActionIcon>
                         </Group>
-                        
+
                         <Group justify="space-between">
                           <Group gap="xs">
-                            <Badge
-                              color="blue"
-                              variant="light"
-                              size="sm"
-                            >
+                            <Badge color="blue" variant="light" size="sm">
                               {dataset.fileCount} files
                             </Badge>
-                            <Badge
-                              color="green"
-                              variant="light"
-                              size="sm"
-                            >
+                            <Badge color="green" variant="light" size="sm">
                               {dataset.totalRows} rows
                             </Badge>
                           </Group>
                           <Text
                             size="xs"
                             style={{
-                              color: '#176B87',
+                              color: "#176B87",
                               opacity: 0.6,
-                              fontFamily: 'Inter Tight, sans-serif'
+                              fontFamily: "Inter Tight, sans-serif",
                             }}
                           >
                             {new Date(dataset.created_at).toLocaleDateString()}
@@ -895,16 +944,16 @@ const SearchPage: React.FC<SearchPageProps> = ({
 
       {/* Search Results */}
       {searchResults.length > 0 && (
-        <Paper shadow="sm" p="lg" style={{ border: '1px solid #86B6F6' }}>
+        <Paper shadow="sm" p="lg" style={{ border: "1px solid #86B6F6" }}>
           <Stack gap="md">
             <Group justify="space-between">
               <Group gap="md">
                 <Title
                   order={3}
                   style={{
-                    color: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    color: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Search Results
@@ -913,8 +962,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   color="blue"
                   variant="light"
                   style={{
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   {totalResults} found
@@ -923,62 +972,72 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <Group gap="sm">
                 <Button
                   onClick={() => {
-                    const allData = searchResults.map(r => `${r.item_description}\t${r.serial_number}\t${r.tag_number}\t${r.quantity}\t${r.status}\t${r.source}`).join('\n');
-                    const headers = 'Item Type\tSerial Number\tCodification\tQuantity\tStatus\tSource';
-                    const fullData = headers + '\n' + allData;
+                    const allData = searchResults
+                      .map(
+                        (r) =>
+                          `${r.item_description}\t${r.serial_number}\t${r.tag_number}\t${r.quantity}\t${r.status}\t${r.source}`
+                      )
+                      .join("\n");
+                    const headers =
+                      "Item Type\tSerial Number\tCodification\tQuantity\tStatus\tSource";
+                    const fullData = headers + "\n" + allData;
                     navigator.clipboard.writeText(fullData);
                     notifications.show({
-                      title: 'Table Copied',
-                      message: 'Complete table copied to clipboard',
-                      color: 'green'
+                      title: "Table Copied",
+                      message: "Complete table copied to clipboard",
+                      color: "green",
                     });
                   }}
                   leftSection={<FileSpreadsheet size={16} />}
                   style={{
-                    backgroundColor: '#28a745',
-                    color: 'white',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Copy Table
                 </Button>
                 <Button
                   onClick={() => {
-                    const serialNumbers = searchResults.map(r => r.serial_number).join('\n');
+                    const serialNumbers = searchResults
+                      .map((r) => r.serial_number)
+                      .join("\n");
                     navigator.clipboard.writeText(serialNumbers);
                     notifications.show({
-                      title: 'Serial Numbers Copied',
-                      message: 'Serial numbers column copied to clipboard',
-                      color: 'green'
+                      title: "Serial Numbers Copied",
+                      message: "Serial numbers column copied to clipboard",
+                      color: "green",
                     });
                   }}
                   leftSection={<Hash size={16} />}
                   style={{
-                    backgroundColor: '#17a2b8',
-                    color: 'white',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    backgroundColor: "#17a2b8",
+                    color: "white",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Copy Serial Numbers
                 </Button>
                 <Button
                   onClick={() => {
-                    const codifications = searchResults.map(r => r.tag_number).join('\n');
+                    const codifications = searchResults
+                      .map((r) => r.tag_number)
+                      .join("\n");
                     navigator.clipboard.writeText(codifications);
                     notifications.show({
-                      title: 'Codifications Copied',
-                      message: 'Codifications column copied to clipboard',
-                      color: 'green'
+                      title: "Codifications Copied",
+                      message: "Codifications column copied to clipboard",
+                      color: "green",
                     });
                   }}
                   leftSection={<Tag size={16} />}
                   style={{
-                    backgroundColor: '#6f42c1',
-                    color: 'white',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    backgroundColor: "#6f42c1",
+                    color: "white",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Copy Codifications
@@ -987,10 +1046,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   onClick={() => setShowExportModal(true)}
                   leftSection={<Download size={16} />}
                   style={{
-                    backgroundColor: '#86B6F6',
-                    color: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    backgroundColor: "#86B6F6",
+                    color: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Export
@@ -1000,10 +1059,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   leftSection={<RefreshCw size={16} />}
                   variant="outline"
                   style={{
-                    borderColor: '#176B87',
-                    color: '#176B87',
-                    fontFamily: 'Inter Tight, sans-serif',
-                    fontWeight: 600
+                    borderColor: "#176B87",
+                    color: "#176B87",
+                    fontFamily: "Inter Tight, sans-serif",
+                    fontWeight: 600,
                   }}
                 >
                   Refresh
@@ -1015,92 +1074,92 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <Paper
                 shadow="sm"
                 style={{
-                  border: '1px solid #86B6F6',
-                  borderRadius: '8px',
-                  overflow: 'hidden'
+                  border: "1px solid #86B6F6",
+                  borderRadius: "8px",
+                  overflow: "hidden",
                 }}
               >
                 <table
                   style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    fontFamily: 'Inter Tight, sans-serif'
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontFamily: "Inter Tight, sans-serif",
                   }}
                 >
                   <thead>
                     <tr
                       style={{
-                        backgroundColor: '#176B87',
-                        color: 'white'
+                        backgroundColor: "#176B87",
+                        color: "white",
                       }}
                     >
                       <th
                         style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
+                          padding: "12px 16px",
+                          textAlign: "left",
                           fontWeight: 600,
-                          fontSize: '14px',
-                          borderRight: '1px solid #86B6F6',
-                          minWidth: '120px'
+                          fontSize: "14px",
+                          borderRight: "1px solid #86B6F6",
+                          minWidth: "120px",
                         }}
                       >
                         Item Type
                       </th>
                       <th
                         style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
+                          padding: "12px 16px",
+                          textAlign: "left",
                           fontWeight: 600,
-                          fontSize: '14px',
-                          borderRight: '1px solid #86B6F6',
-                          minWidth: '150px'
+                          fontSize: "14px",
+                          borderRight: "1px solid #86B6F6",
+                          minWidth: "150px",
                         }}
                       >
                         Serial Number
                       </th>
                       <th
                         style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
+                          padding: "12px 16px",
+                          textAlign: "left",
                           fontWeight: 600,
-                          fontSize: '14px',
-                          borderRight: '1px solid #86B6F6',
-                          minWidth: '200px'
+                          fontSize: "14px",
+                          borderRight: "1px solid #86B6F6",
+                          minWidth: "200px",
                         }}
                       >
                         Codification
                       </th>
                       <th
                         style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
+                          padding: "12px 16px",
+                          textAlign: "left",
                           fontWeight: 600,
-                          fontSize: '14px',
-                          borderRight: '1px solid #86B6F6',
-                          minWidth: '100px'
+                          fontSize: "14px",
+                          borderRight: "1px solid #86B6F6",
+                          minWidth: "100px",
                         }}
                       >
                         Quantity
                       </th>
                       <th
                         style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
+                          padding: "12px 16px",
+                          textAlign: "left",
                           fontWeight: 600,
-                          fontSize: '14px',
-                          borderRight: '1px solid #86B6F6',
-                          minWidth: '100px'
+                          fontSize: "14px",
+                          borderRight: "1px solid #86B6F6",
+                          minWidth: "100px",
                         }}
                       >
                         Status
                       </th>
                       <th
                         style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
+                          padding: "12px 16px",
+                          textAlign: "left",
                           fontWeight: 600,
-                          fontSize: '14px',
-                          minWidth: '120px'
+                          fontSize: "14px",
+                          minWidth: "120px",
                         }}
                       >
                         Source
@@ -1112,35 +1171,37 @@ const SearchPage: React.FC<SearchPageProps> = ({
                       <tr
                         key={result.id}
                         style={{
-                          backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
-                          borderBottom: '1px solid #e9ecef',
-                          cursor: 'pointer',
-                          transition: 'background-color 0.2s ease'
+                          backgroundColor:
+                            index % 2 === 0 ? "#ffffff" : "#f8f9fa",
+                          borderBottom: "1px solid #e9ecef",
+                          cursor: "pointer",
+                          transition: "background-color 0.2s ease",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#e3f2fd';
+                          e.currentTarget.style.backgroundColor = "#e3f2fd";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                          e.currentTarget.style.backgroundColor =
+                            index % 2 === 0 ? "#ffffff" : "#f8f9fa";
                         }}
                         onClick={() => {
                           // Copy row data to clipboard
                           const rowData = `${result.item_description}\t${result.serial_number}\t${result.tag_number}\t${result.quantity}\t${result.status}\t${result.source}`;
                           navigator.clipboard.writeText(rowData);
                           notifications.show({
-                            title: 'Row Copied',
-                            message: 'Row data copied to clipboard',
-                            color: 'green'
+                            title: "Row Copied",
+                            message: "Row data copied to clipboard",
+                            color: "green",
                           });
                         }}
                       >
                         <td
                           style={{
-                            padding: '12px 16px',
-                            borderRight: '1px solid #e9ecef',
-                            fontSize: '14px',
+                            padding: "12px 16px",
+                            borderRight: "1px solid #e9ecef",
+                            fontSize: "14px",
                             fontWeight: 600,
-                            color: '#176B87'
+                            color: "#176B87",
                           }}
                         >
                           <Group gap="xs">
@@ -1150,42 +1211,42 @@ const SearchPage: React.FC<SearchPageProps> = ({
                         </td>
                         <td
                           style={{
-                            padding: '12px 16px',
-                            borderRight: '1px solid #e9ecef',
-                            fontSize: '14px',
-                            color: '#495057',
-                            fontFamily: 'monospace'
+                            padding: "12px 16px",
+                            borderRight: "1px solid #e9ecef",
+                            fontSize: "14px",
+                            color: "#495057",
+                            fontFamily: "monospace",
                           }}
                         >
                           {result.serial_number}
                         </td>
                         <td
                           style={{
-                            padding: '12px 16px',
-                            borderRight: '1px solid #e9ecef',
-                            fontSize: '14px',
-                            color: '#495057',
-                            fontFamily: 'monospace'
+                            padding: "12px 16px",
+                            borderRight: "1px solid #e9ecef",
+                            fontSize: "14px",
+                            color: "#495057",
+                            fontFamily: "monospace",
                           }}
                         >
                           {result.tag_number}
                         </td>
                         <td
                           style={{
-                            padding: '12px 16px',
-                            borderRight: '1px solid #e9ecef',
-                            fontSize: '14px',
-                            color: '#495057',
-                            textAlign: 'center'
+                            padding: "12px 16px",
+                            borderRight: "1px solid #e9ecef",
+                            fontSize: "14px",
+                            color: "#495057",
+                            textAlign: "center",
                           }}
                         >
                           {result.quantity}
                         </td>
                         <td
                           style={{
-                            padding: '12px 16px',
-                            borderRight: '1px solid #e9ecef',
-                            fontSize: '14px'
+                            padding: "12px 16px",
+                            borderRight: "1px solid #e9ecef",
+                            fontSize: "14px",
                           }}
                         >
                           <Badge
@@ -1198,8 +1259,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
                         </td>
                         <td
                           style={{
-                            padding: '12px 16px',
-                            fontSize: '14px'
+                            padding: "12px 16px",
+                            fontSize: "14px",
                           }}
                         >
                           <Badge
@@ -1207,7 +1268,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
                             variant="light"
                             size="sm"
                           >
-                            {result.source.replace('_', ' ').toUpperCase()}
+                            {result.source.replace("_", " ").toUpperCase()}
                           </Badge>
                         </td>
                       </tr>
@@ -1227,12 +1288,12 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   size="sm"
                   styles={{
                     control: {
-                      borderColor: '#86B6F6',
-                      color: '#176B87',
-                      '&[data-active]': {
-                        backgroundColor: '#176B87'
-                      }
-                    }
+                      borderColor: "#86B6F6",
+                      color: "#176B87",
+                      "&[data-active]": {
+                        backgroundColor: "#176B87",
+                      },
+                    },
                   }}
                 />
               </Center>
@@ -1248,8 +1309,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
             <Avatar
               size="xl"
               style={{
-                backgroundColor: '#B4D4FF',
-                color: '#176B87'
+                backgroundColor: "#B4D4FF",
+                color: "#176B87",
               }}
             >
               <Search size={32} />
@@ -1258,9 +1319,9 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <Title
                 order={3}
                 style={{
-                  color: '#176B87',
-                  fontFamily: 'Inter Tight, sans-serif',
-                  fontWeight: 600
+                  color: "#176B87",
+                  fontFamily: "Inter Tight, sans-serif",
+                  fontWeight: 600,
                 }}
               >
                 No Results Found
@@ -1268,10 +1329,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <Text
                 size="sm"
                 style={{
-                  color: '#176B87',
+                  color: "#176B87",
                   opacity: 0.7,
-                  fontFamily: 'Inter Tight, sans-serif',
-                  textAlign: 'center'
+                  fontFamily: "Inter Tight, sans-serif",
+                  textAlign: "center",
                 }}
               >
                 Try adjusting your search terms or filters
@@ -1289,8 +1350,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
             <Text
               size="sm"
               style={{
-                color: '#176B87',
-                fontFamily: 'Inter Tight, sans-serif'
+                color: "#176B87",
+                fontFamily: "Inter Tight, sans-serif",
               }}
             >
               Searching...
@@ -1309,12 +1370,12 @@ const SearchPage: React.FC<SearchPageProps> = ({
         radius="xl"
         styles={{
           header: {
-            backgroundColor: '#B4D4FF',
-            borderBottom: '1px solid #86B6F6'
+            backgroundColor: "#B4D4FF",
+            borderBottom: "1px solid #86B6F6",
           },
           body: {
-            backgroundColor: 'white'
-          }
+            backgroundColor: "white",
+          },
         }}
       >
         <Stack gap="lg">
@@ -1325,57 +1386,57 @@ const SearchPage: React.FC<SearchPageProps> = ({
             onChange={(e) => setExportFileName(e.target.value)}
             styles={{
               label: {
-                color: '#176B87',
-                fontFamily: 'Inter Tight, sans-serif',
-                fontWeight: 600
+                color: "#176B87",
+                fontFamily: "Inter Tight, sans-serif",
+                fontWeight: 600,
               },
               input: {
-                borderColor: '#86B6F6',
-                fontFamily: 'Inter Tight, sans-serif',
-                '&:focus': {
-                  borderColor: '#176B87'
-                }
-              }
+                borderColor: "#86B6F6",
+                fontFamily: "Inter Tight, sans-serif",
+                "&:focus": {
+                  borderColor: "#176B87",
+                },
+              },
             }}
           />
           <Select
             label="Export Format"
             value={exportFormat}
-            onChange={(value) => setExportFormat(value || 'excel')}
+            onChange={(value) => setExportFormat(value || "excel")}
             data={[
-              { value: 'excel', label: 'Excel (.xlsx)' },
-              { value: 'csv', label: 'CSV (.csv)' }
+              { value: "excel", label: "Excel (.xlsx)" },
+              { value: "csv", label: "CSV (.csv)" },
             ]}
             styles={{
               label: {
-                color: '#176B87',
-                fontFamily: 'Inter Tight, sans-serif',
-                fontWeight: 600
-              }
+                color: "#176B87",
+                fontFamily: "Inter Tight, sans-serif",
+                fontWeight: 600,
+              },
             }}
           />
           <Text
             size="sm"
             style={{
-              color: '#176B87',
+              color: "#176B87",
               opacity: 0.7,
-              fontFamily: 'Inter Tight, sans-serif'
+              fontFamily: "Inter Tight, sans-serif",
             }}
           >
             Exporting {searchResults.length} results
           </Text>
         </Stack>
-        
+
         <Group justify="flex-end" mt="xl">
           <Button
             onClick={() => setShowExportModal(false)}
             variant="outline"
             radius="lg"
             style={{
-              borderColor: '#86B6F6',
-              color: '#176B87',
-              fontFamily: 'Inter Tight, sans-serif',
-              fontWeight: 600
+              borderColor: "#86B6F6",
+              color: "#176B87",
+              fontFamily: "Inter Tight, sans-serif",
+              fontWeight: 600,
             }}
           >
             Cancel
@@ -1384,9 +1445,9 @@ const SearchPage: React.FC<SearchPageProps> = ({
             onClick={handleExportResults}
             radius="lg"
             style={{
-              backgroundColor: '#176B87',
-              fontFamily: 'Inter Tight, sans-serif',
-              fontWeight: 600
+              backgroundColor: "#176B87",
+              fontFamily: "Inter Tight, sans-serif",
+              fontWeight: 600,
             }}
           >
             Export

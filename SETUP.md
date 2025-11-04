@@ -3,11 +3,13 @@
 ## Quick Start
 
 1. **Copy the environment file:**
+
    ```bash
    cp env.example .env.local
    ```
 
 2. **Add your API keys to `.env.local`:**
+
    ```
    NEXT_PUBLIC_GEMINI_API_KEY_1=your-actual-api-key-here
    NEXT_PUBLIC_GEMINI_API_KEY_2=your-second-api-key-here
@@ -15,11 +17,13 @@
    ```
 
 3. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 4. **Start the development server:**
+
    ```bash
    npm run dev
    ```
@@ -59,4 +63,3 @@
 - If table formatting fails, the app will try a fallback parsing method
 - Make sure your API keys are valid and have sufficient quota
 - Check the browser console for detailed error messages
-

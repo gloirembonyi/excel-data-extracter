@@ -5,7 +5,7 @@ export interface BatchJob {
   totalImages: number;
   completedImages: number;
   failedImages: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   progress: number;
   results: BatchImageResult[];
   createdAt: string;
@@ -15,7 +15,7 @@ export interface BatchJob {
 export interface BatchImageResult {
   id: string;
   filename: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'retrying';
+  status: "pending" | "processing" | "completed" | "failed" | "retrying";
   extractedText: string;
   tableData: Record<string, any>[];
   errorMessage?: string;
@@ -38,7 +38,7 @@ export class BatchProcessor {
   private activeJobs: Map<string, BatchJob> = new Map();
   private pollingIntervals: Map<string, NodeJS.Timeout> = new Map();
 
-  constructor(backendUrl: string = 'http://localhost:8000') {
+  constructor(backendUrl: string = "http://localhost:8000") {
     this.backendUrl = backendUrl;
   }
 
@@ -50,62 +50,61 @@ export class BatchProcessor {
     options: BatchProcessingOptions = {
       maxConcurrent: 5,
       maxRetries: 3,
-      retryDelay: 2000
+      retryDelay: 2000,
     }
   ): Promise<BatchJob> {
     try {
       // Validate files
       if (files.length === 0) {
-        throw new Error('No files provided');
+        throw new Error("No files provided");
       }
 
       if (files.length > 100) {
-        throw new Error('Maximum 100 images allowed per batch');
+        throw new Error("Maximum 100 images allowed per batch");
       }
 
       // Create FormData
       const formData = new FormData();
-      files.forEach(file => {
-        formData.append('images', file);
+      files.forEach((file) => {
+        formData.append("images", file);
       });
 
       // Start batch processing
       const response = await fetch(`${this.backendUrl}/batch-process-images`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
         headers: {
-          'max_concurrent': options.maxConcurrent.toString()
-        }
+          max_concurrent: options.maxConcurrent.toString(),
+        },
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || 'Failed to start batch processing');
+        throw new Error(error.detail || "Failed to start batch processing");
       }
 
       const result = await response.json();
-      
+
       // Create job object
       const job: BatchJob = {
         id: result.job_id,
         totalImages: result.total_images,
         completedImages: 0,
         failedImages: 0,
-        status: 'processing',
+        status: "processing",
         progress: 0,
         results: [],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       this.activeJobs.set(job.id, job);
-      
+
       // Start polling for updates
       this.startPolling(job.id, options);
-      
-      return job;
 
+      return job;
     } catch (error) {
-      console.error('Error starting batch processing:', error);
+      console.error("Error starting batch processing:", error);
       options.onError?.(error as Error);
       throw error;
     }
@@ -119,7 +118,7 @@ export class BatchProcessor {
       try {
         await this.updateJobStatus(jobId, options);
       } catch (error) {
-        console.error('Error polling job status:', error);
+        console.error("Error polling job status:", error);
         this.stopPolling(jobId);
         options.onError?.(error as Error);
       }
@@ -142,19 +141,22 @@ export class BatchProcessor {
   /**
    * Update job status from backend
    */
-  private async updateJobStatus(jobId: string, options: BatchProcessingOptions) {
+  private async updateJobStatus(
+    jobId: string,
+    options: BatchProcessingOptions
+  ) {
     try {
       const response = await fetch(`${this.backendUrl}/batch-status/${jobId}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to get job status');
+        throw new Error("Failed to get job status");
       }
 
       const status = await response.json();
       const job = this.activeJobs.get(jobId);
-      
+
       if (!job) {
-        throw new Error('Job not found');
+        throw new Error("Job not found");
       }
 
       // Update job status
@@ -171,14 +173,13 @@ export class BatchProcessor {
       options.onProgress?.(job);
 
       // Check if job is completed
-      if (status.status === 'completed' || status.status === 'failed') {
+      if (status.status === "completed" || status.status === "failed") {
         await this.loadJobResults(jobId, options);
         this.stopPolling(jobId);
         options.onComplete?.(job);
       }
-
     } catch (error) {
-      console.error('Error updating job status:', error);
+      console.error("Error updating job status:", error);
       throw error;
     }
   }
@@ -189,16 +190,16 @@ export class BatchProcessor {
   private async loadJobResults(jobId: string, options: BatchProcessingOptions) {
     try {
       const response = await fetch(`${this.backendUrl}/batch-results/${jobId}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to get job results');
+        throw new Error("Failed to get job results");
       }
 
       const results = await response.json();
       const job = this.activeJobs.get(jobId);
-      
+
       if (!job) {
-        throw new Error('Job not found');
+        throw new Error("Job not found");
       }
 
       // Update job with detailed results
@@ -211,13 +212,12 @@ export class BatchProcessor {
         errorMessage: result.error_message,
         processingTime: result.processing_time,
         retryCount: result.retry_count,
-        apiKeyUsed: result.api_key_used
+        apiKeyUsed: result.api_key_used,
       }));
 
       this.activeJobs.set(jobId, job);
-
     } catch (error) {
-      console.error('Error loading job results:', error);
+      console.error("Error loading job results:", error);
       throw error;
     }
   }
@@ -243,7 +243,7 @@ export class BatchProcessor {
     this.stopPolling(jobId);
     const job = this.activeJobs.get(jobId);
     if (job) {
-      job.status = 'failed';
+      job.status = "failed";
       this.activeJobs.set(jobId, job);
     }
   }
@@ -259,9 +259,9 @@ export class BatchProcessor {
     this.pollingIntervals.clear();
 
     // Clear completed jobs older than 1 hour
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
     this.activeJobs.forEach((job, jobId) => {
-      if (job.status === 'completed' || job.status === 'failed') {
+      if (job.status === "completed" || job.status === "failed") {
         const jobTime = new Date(job.completedAt || job.createdAt).getTime();
         if (jobTime < oneHourAgo) {
           this.activeJobs.delete(jobId);
@@ -273,15 +273,20 @@ export class BatchProcessor {
   /**
    * Retry failed images in a job
    */
-  async retryFailedImages(jobId: string, options: BatchProcessingOptions): Promise<BatchJob> {
+  async retryFailedImages(
+    jobId: string,
+    options: BatchProcessingOptions
+  ): Promise<BatchJob> {
     const job = this.activeJobs.get(jobId);
     if (!job) {
-      throw new Error('Job not found');
+      throw new Error("Job not found");
     }
 
-    const failedImages = job.results.filter(result => result.status === 'failed');
+    const failedImages = job.results.filter(
+      (result) => result.status === "failed"
+    );
     if (failedImages.length === 0) {
-      throw new Error('No failed images to retry');
+      throw new Error("No failed images to retry");
     }
 
     // Create new files from failed results
@@ -290,15 +295,15 @@ export class BatchProcessor {
     // For now, we'll just retry the processing with the existing data
 
     // Reset failed results to pending
-    failedImages.forEach(result => {
-      result.status = 'pending';
+    failedImages.forEach((result) => {
+      result.status = "pending";
       result.retryCount = 0;
       result.errorMessage = undefined;
     });
 
     // Start processing again
     this.startPolling(jobId, options);
-    
+
     return job;
   }
 }
@@ -307,12 +312,15 @@ export class BatchProcessor {
 export const batchProcessor = new BatchProcessor();
 
 // Utility functions
-export const createBatchJob = (files: File[], options?: Partial<BatchProcessingOptions>): Promise<BatchJob> => {
+export const createBatchJob = (
+  files: File[],
+  options?: Partial<BatchProcessingOptions>
+): Promise<BatchJob> => {
   return batchProcessor.startBatchProcessing(files, {
     maxConcurrent: 5,
     maxRetries: 3,
     retryDelay: 2000,
-    ...options
+    ...options,
   });
 };
 

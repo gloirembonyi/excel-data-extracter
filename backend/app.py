@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from dataclasses import dataclass
 from enum import Enum
-import asyncpg
+# import asyncpg
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker

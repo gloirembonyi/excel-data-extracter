@@ -5,6 +5,7 @@ A powerful web application that extracts data from images and converts them into
 ## Features
 
 ### 🚀 Core Features
+
 - **Image Data Extraction**: Upload images and extract structured data using AI
 - **Excel-like Interface**: Clean, professional table interface similar to Microsoft Excel
 - **Inline Editing**: Edit table cells directly in the interface
@@ -14,6 +15,7 @@ A powerful web application that extracts data from images and converts them into
 - **Real-time API Status**: Monitor API key health and performance
 
 ### 📊 Data Management
+
 - **Table Editing**: Click any cell to edit data inline
 - **Data Validation**: Built-in validation for data integrity
 - **Sorting & Filtering**: Organize and filter data easily
@@ -21,6 +23,7 @@ A powerful web application that extracts data from images and converts them into
 - **Export Options**: Multiple export formats (Excel, CSV)
 
 ### 🔧 Advanced Tools
+
 - **Data Comparison**: Side-by-side dataset comparison
 - **Difference Detection**: Automatically identify changes between datasets
 - **Data Cleaning**: Tools for data standardization
@@ -29,11 +32,13 @@ A powerful web application that extracts data from images and converts them into
 ## Installation
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - Python 3.8+
 - npm or yarn
 
 ### Frontend Setup
+
 ```bash
 cd excel-table-maker
 npm install
@@ -41,6 +46,7 @@ npm run dev
 ```
 
 ### Backend Setup (Optional)
+
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -50,6 +56,7 @@ python app.py
 ## Usage
 
 ### 1. Extract Data from Images
+
 1. Go to the "Extract Data" tab
 2. Upload an image file (PNG, JPG, etc.)
 3. Click "Extract Text ✨" to process the image
@@ -59,6 +66,7 @@ python app.py
 7. Export to Excel or CSV
 
 ### 2. Compare Datasets
+
 1. Go to the "Compare Data" tab
 2. Upload two Excel/CSV files or use extracted data
 3. Click "Compare Data" to analyze differences
@@ -66,6 +74,7 @@ python app.py
 5. Export comparison reports
 
 ### 3. Batch Processing
+
 1. Select multiple images at once
 2. Click "Process All Images" to extract data from all images
 3. Review individual results
@@ -109,6 +118,7 @@ excel-table-maker/
 ## Technologies Used
 
 ### Frontend
+
 - **Next.js 15**: React framework with App Router
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first CSS framework
@@ -117,6 +127,7 @@ excel-table-maker/
 - **File-saver**: File download functionality
 
 ### Backend (Optional)
+
 - **FastAPI**: High-performance Python web framework
 - **Pandas**: Data manipulation and analysis
 - **OpenPyXL**: Excel file processing
@@ -146,6 +157,7 @@ MIT License - see LICENSE file for details
 ## Support
 
 For issues and questions:
+
 1. Check the GitHub issues page
 2. Create a new issue with detailed description
 3. Include error messages and steps to reproduce
@@ -153,6 +165,7 @@ For issues and questions:
 ## Changelog
 
 ### v1.0.0
+
 - Initial release
 - Image data extraction
 - Excel-like table interface
