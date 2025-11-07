@@ -42,9 +42,9 @@ interface Dataset {
 }
 
 interface SidebarProps {
-  activeTab: "extract" | "compare" | "projects" | "tools" | "search";
+  activeTab: "extract" | "compare" | "projects" | "tools" | "search" | "expenses";
   onTabChange: (
-    tab: "extract" | "compare" | "projects" | "tools" | "search"
+    tab: "extract" | "compare" | "projects" | "tools" | "search" | "expenses"
   ) => void;
   currentProject: Project | null;
   masterDataCount: number;
@@ -310,6 +310,27 @@ const Sidebar: React.FC<SidebarProps> = ({
               fullWidth
             >
               {isCollapsed ? "🔍" : "Search Data"}
+            </Button>
+            <Button
+              onClick={() => onTabChange("expenses")}
+              variant={activeTab === "expenses" ? "filled" : "subtle"}
+              size="sm"
+              style={{
+                backgroundColor:
+                  activeTab === "expenses" ? "#176B87" : "transparent",
+                color: activeTab === "expenses" ? "white" : "#176B87",
+                fontFamily: "Inter Tight, sans-serif",
+                fontWeight: 600,
+                justifyContent: isCollapsed ? "center" : "flex-start",
+                height: "36px",
+                borderRadius: "6px",
+                border: "none",
+                fontSize: "12px",
+              }}
+              leftSection={!isCollapsed ? <Text size="sm">💰</Text> : undefined}
+              fullWidth
+            >
+              {isCollapsed ? "💰" : "Expense Tracker"}
             </Button>
           </Stack>
 

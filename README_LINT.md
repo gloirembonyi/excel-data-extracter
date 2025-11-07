@@ -50,3 +50,4 @@ Automatically runs formatting before building the project.
 - Linting is handled separately via `next lint`
 - All files are automatically formatted before building
 
+
