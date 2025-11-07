@@ -18,18 +18,28 @@ export const GEMINI_API_KEYS = [
   process.env.NEXT_PUBLIC_GEMINI_API_KEY_6,
 ].filter(Boolean) as string[];
 
-// Fallback API keys for load balancing
+// Log API keys status (without exposing full keys)
+if (typeof window === 'undefined') {
+  console.log(`[Server] Loaded ${GEMINI_API_KEYS.length} API keys from environment`);
+} else {
+  console.log(`[Client] Loaded ${GEMINI_API_KEYS.length} API keys from environment`);
+}
+
+// Fallback API keys for load balancing - using the new provided key
 const FALLBACK_API_KEYS = [
-  "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-  "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w", // Duplicate for load balancing
-  "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-  "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-  "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-  "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
+  "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E",
+  "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E", // Duplicate for load balancing
+  "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E",
+  "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E",
+  "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E",
+  "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E",
 ];
 
 export const getApiKeys = (): string[] => {
   const keys = GEMINI_API_KEYS.length > 0 ? GEMINI_API_KEYS : FALLBACK_API_KEYS;
+  if (typeof window === 'undefined') {
+    console.log(`[Server] Using ${keys.length} API keys (${GEMINI_API_KEYS.length > 0 ? 'from env' : 'fallback'})`);
+  }
   return keys;
 };
 
@@ -69,9 +79,13 @@ export const updateApiKeyStatus = (
 ): ApiKeyStatus[] => {
   return apiKeyStatuses.map((status) => {
     if (status.key === apiKey) {
+      // Check if error is quota exceeded (429) - mark as not working immediately
+      const isQuotaExceeded = error?.includes("429") || error?.includes("RESOURCE_EXHAUSTED") || error?.includes("quota");
+      
       return {
         ...status,
-        isWorking: success || status.errorCount < 5, // Mark as not working after 5 consecutive errors
+        // Mark as not working immediately if quota exceeded, otherwise check error count
+        isWorking: success ? true : (isQuotaExceeded ? false : status.errorCount < 5),
         lastUsed: Date.now(),
         errorCount: success ? 0 : status.errorCount + 1,
         successCount: success ? status.successCount + 1 : status.successCount,
@@ -133,7 +147,7 @@ export const extractTextFromImageWithFailover = async (
         reader.readAsDataURL(file);
       });
 
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const payload = {
         contents: [
           {
@@ -260,7 +274,7 @@ Example format:
     }
 
     try {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -402,9 +416,16 @@ Example format:
             `API Overloaded: ${response.status} ${response.statusText}`
           );
         } else if (response.status === 429) {
-          console.log("Rate limit exceeded (429), will try next key");
+          console.log("Quota exceeded (429) for API key, marking as not working");
+          // Mark this key as not working immediately for quota errors
+          updateApiKeyStatus(
+            apiKeyStatuses,
+            apiKey,
+            false,
+            `Quota exceeded: ${errorText}`
+          );
           throw new Error(
-            `Rate Limited: ${response.status} ${response.statusText}`
+            `API Quota Exceeded: This API key has reached its usage limit. Please check your billing details or try a different key. Status: ${response.status}`
           );
         } else {
           throw new Error(
@@ -418,7 +439,12 @@ Example format:
         error
       );
 
-      // Update API key status
+      // Check if it's a quota error and mark key as not working
+      const isQuotaError = error instanceof Error && 
+        (error.message.includes("429") || 
+         error.message.includes("quota") || 
+         error.message.includes("RESOURCE_EXHAUSTED"));
+      
       updateApiKeyStatus(
         apiKeyStatuses,
         apiKey,
@@ -427,6 +453,12 @@ Example format:
       );
 
       if (attempt === maxRetries - 1) {
+        // If quota error, provide helpful message
+        if (isQuotaError) {
+          throw new Error(
+            `API Quota Exceeded: All API keys have reached their usage limits. Please check your billing details at https://ai.dev/usage?tab=rate-limit`
+          );
+        }
         throw error;
       }
     }
@@ -688,4 +720,320 @@ export const initializeApiKeyStatuses = (): ApiKeyStatus[] => {
     errorCount: 0,
     successCount: 0,
   }));
+};
+
+/**
+ * Expense recommendation interface
+ */
+export interface ExpenseRecommendation {
+  category: string;
+  recommendedAmount: number;
+  percentage: number;
+  description: string;
+  priority: "essential" | "important" | "optional";
+}
+
+export interface ExpensePlan {
+  salary: number;
+  expenses: ExpenseRecommendation[];
+  savings: {
+    recommendedAmount: number;
+    percentage: number;
+    description: string;
+  };
+  emergencyFund: {
+    recommendedAmount: number;
+    percentage: number;
+    description: string;
+  };
+  totalExpenses: number;
+  remaining: number;
+  recommendations: string[];
+}
+
+/**
+ * Get expense recommendations from Gemini API
+ */
+export const getExpenseRecommendations = async (
+  netSalary: number,
+  apiKeyStatuses: ApiKeyStatus[],
+  maxRetries: number = 3
+): Promise<ExpensePlan> => {
+  const prompt = `You are a financial advisor AI. Help create a comprehensive expense and savings plan based on a net salary of $${netSalary.toLocaleString()} per month.
+
+Provide a detailed budget breakdown following these principles:
+1. Essential expenses (housing, utilities, food, transportation) should be 50-60% of income
+2. Savings should be 20-30% of income
+3. Emergency fund should be part of savings allocation
+4. Personal/entertainment should be 10-15% of income
+5. Remaining can be for investments or extra savings
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "expenses": [
+    {
+      "category": "Category name (e.g., Housing/Rent)",
+      "recommendedAmount": number in dollars,
+      "percentage": number representing percentage of salary,
+      "description": "Brief explanation",
+      "priority": "essential" | "important" | "optional"
+    }
+  ],
+  "savings": {
+    "recommendedAmount": number in dollars,
+    "percentage": number representing percentage of salary,
+    "description": "Savings plan explanation"
+  },
+  "emergencyFund": {
+    "recommendedAmount": number in dollars,
+    "percentage": number representing percentage of salary,
+    "description": "Emergency fund explanation"
+  },
+  "recommendations": [
+    "Array of actionable financial advice strings"
+  ]
+}
+
+Make sure:
+- Total expenses + savings + emergency fund should equal approximately 100% of salary
+- Include essential categories: Housing/Rent, Utilities, Food/Groceries, Transportation, Healthcare, Insurance
+- Include important categories: Personal Care, Entertainment, Subscriptions
+- Provide realistic amounts based on the salary range
+- Prioritize savings and emergency fund
+- Give practical, actionable recommendations`;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const apiKey = getWorkingApiKey(apiKeyStatuses);
+    if (!apiKey) {
+      throw new Error("No working API keys available");
+    }
+
+    try {
+      // Try Gemini 2.0 Flash models first, then fallback to 1.5
+      const modelEndpoints = [
+        "gemini-2.0-flash-exp",      // Gemini 2.0 Flash Experimental
+        "gemini-2.0-flash",          // Gemini 2.0 Flash
+        "gemini-2.0-flash-thinking-exp", // Gemini 2.0 Flash Thinking
+        "gemini-1.5-flash-latest",   // Fallback to 1.5 Flash Latest
+        "gemini-1.5-flash"           // Fallback to 1.5 Flash
+      ];
+      
+      let lastError: Error | null = null;
+      
+      for (const model of modelEndpoints) {
+        try {
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          
+          const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  expenses: {
+                    type: "ARRAY",
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        category: { type: "string" },
+                        recommendedAmount: { type: "number" },
+                        percentage: { type: "number" },
+                        description: { type: "string" },
+                        priority: {
+                          type: "STRING",
+                          enum: ["essential", "important", "optional"],
+                        },
+                      },
+                      required: [
+                        "category",
+                        "recommendedAmount",
+                        "percentage",
+                        "description",
+                        "priority",
+                      ],
+                    },
+                  },
+                  savings: {
+                    type: "OBJECT",
+                    properties: {
+                      recommendedAmount: { type: "number" },
+                      percentage: { type: "number" },
+                      description: { type: "string" },
+                    },
+                    required: ["recommendedAmount", "percentage", "description"],
+                  },
+                  emergencyFund: {
+                    type: "OBJECT",
+                    properties: {
+                      recommendedAmount: { type: "number" },
+                      percentage: { type: "number" },
+                      description: { type: "string" },
+                    },
+                    required: ["recommendedAmount", "percentage", "description"],
+                  },
+                  recommendations: {
+                    type: "ARRAY",
+                    items: { type: "string" },
+                  },
+                },
+                required: ["expenses", "savings", "emergencyFund", "recommendations"],
+              },
+            },
+          };
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          
+          if (response.status === 404) {
+            // Model not found, try next model
+            console.log(`Model ${model} not found, trying next...`);
+            lastError = new Error(`Model ${model} not available`);
+            continue;
+          }
+
+          if (response.ok) {
+            const result = await response.json();
+            let generatedJson =
+              result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (generatedJson) {
+              try {
+                const parsedData = JSON.parse(generatedJson);
+                const totalExpenses = parsedData.expenses.reduce(
+                  (sum: number, exp: ExpenseRecommendation) =>
+                    sum + exp.recommendedAmount,
+                  0
+                );
+                const totalSavings =
+                  parsedData.savings.recommendedAmount +
+                  parsedData.emergencyFund.recommendedAmount;
+                const remaining = netSalary - totalExpenses - totalSavings;
+
+                updateApiKeyStatus(apiKeyStatuses, apiKey, true);
+                console.log(`Successfully got recommendations using model: ${model}`);
+                return {
+                  salary: netSalary,
+                  expenses: parsedData.expenses,
+                  savings: parsedData.savings,
+                  emergencyFund: parsedData.emergencyFund,
+                  totalExpenses,
+                  remaining,
+                  recommendations: parsedData.recommendations || [],
+                };
+              } catch (parseError) {
+                console.error("JSON parsing error:", parseError);
+                lastError = new Error("Failed to parse API response");
+                continue; // Try next model
+              }
+            } else {
+              lastError = new Error("No content generated from API");
+              continue; // Try next model
+            }
+          } else {
+            const errorText = await response.text();
+            
+            // Handle quota exceeded errors specifically
+            if (response.status === 429) {
+              // Only log once, not for every model attempt
+              if (model === modelEndpoints[0]) {
+                console.warn(`API Quota Exceeded for API key. Trying next API key...`);
+              }
+              updateApiKeyStatus(
+                apiKeyStatuses,
+                apiKey,
+                false,
+                `Quota exceeded: ${errorText}`
+              );
+              // Don't continue to next model if it's a quota error - try next API key instead
+              throw new Error(
+                `API Quota Exceeded: This API key has reached its usage limit. Please check your billing details at https://ai.dev/usage?tab=rate-limit or try a different key.`
+              );
+            }
+            
+            // For 404 (model not found), try next model silently
+            if (response.status === 404) {
+              console.log(`Model ${model} not found, trying next...`);
+              lastError = new Error(`Model ${model} not available`);
+              continue;
+            }
+            
+            // For other errors, log and try next model
+            if (response.status !== 404) {
+              console.error(`API Error for ${model}: ${response.status} ${response.statusText}`);
+              lastError = new Error(
+                `API Error: ${response.status} ${response.statusText}`
+              );
+            }
+            continue; // Try next model
+          }
+        } catch (modelError) {
+          // Only log non-quota errors to reduce console noise
+          const isQuotaError = modelError instanceof Error && 
+            (modelError.message.includes("429") || 
+             modelError.message.includes("quota") || 
+             modelError.message.includes("RESOURCE_EXHAUSTED"));
+          
+          if (!isQuotaError) {
+            console.log(`Model ${model} error:`, modelError instanceof Error ? modelError.message : String(modelError));
+          }
+          lastError = modelError instanceof Error ? modelError : new Error(String(modelError));
+          // Continue to next model
+          continue;
+        }
+      }
+      
+      // If all models failed, throw the last error
+      if (lastError) {
+        throw lastError;
+      }
+      throw new Error("All model endpoints failed");
+    } catch (error) {
+      // Check if it's a quota error and mark key as not working
+      const isQuotaError = error instanceof Error && 
+        (error.message.includes("429") || 
+         error.message.includes("quota") || 
+         error.message.includes("RESOURCE_EXHAUSTED"));
+      
+      if (isQuotaError) {
+        // Mark as not working immediately for quota errors
+        updateApiKeyStatus(
+          apiKeyStatuses,
+          apiKey,
+          false,
+          error instanceof Error ? error.message : "Quota exceeded"
+        );
+        // Only log once per API key attempt
+        if (attempt === 0) {
+          console.warn(`API key quota exceeded. Trying next available key...`);
+        }
+      } else {
+        updateApiKeyStatus(
+          apiKeyStatuses,
+          apiKey,
+          false,
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error(
+          `Attempt ${attempt + 1} failed for API key:`,
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+
+      if (attempt === maxRetries - 1) {
+        // On final attempt, provide helpful error message
+        if (isQuotaError) {
+          throw new Error(
+            `All API keys have reached their quota limits. Please check your billing at https://ai.dev/usage?tab=rate-limit or add new API keys to your .env.local file.`
+          );
+        }
+        throw error;
+      }
+    }
+  }
+
+  throw new Error("All retry attempts failed - all API keys have been exhausted. Please check your API key quotas.");
 };

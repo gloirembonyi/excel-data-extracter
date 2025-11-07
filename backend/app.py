@@ -23,6 +23,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in backend directory
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
+# Also try loading from parent directory
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -570,19 +577,41 @@ def fallback_parse_equipment_data(text: str) -> List[Dict[str, Any]]:
     
     return result
 
-# API Keys (in production, use environment variables)
-API_KEYS = [
-    "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-    "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",  # Duplicate for load balancing
-    "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-    "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-    "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w",
-    "AIzaSyBDqoYqf5QS9qm8Z99rOZsRZi2ChA_Dw8w"
-]
+# API Keys from environment variables
+def get_api_keys() -> List[str]:
+    """Get API keys from environment variables with fallback"""
+    api_keys = [
+        os.getenv("GEMINI_API_KEY_1"),
+        os.getenv("GEMINI_API_KEY_2"),
+        os.getenv("GEMINI_API_KEY_3"),
+        os.getenv("GEMINI_API_KEY_4"),
+        os.getenv("GEMINI_API_KEY_5"),
+        os.getenv("GEMINI_API_KEY_6"),
+    ]
+    # Filter out None values
+    api_keys = [key for key in api_keys if key]
+    
+    # Fallback to hardcoded key if no env vars are set
+    if not api_keys:
+        logger.warning("No API keys found in environment variables, using fallback key")
+        fallback_key = "AIzaSyADFy9g965oV8Qv7V_FjCNgqud8dCsUL9E"
+        api_keys = [fallback_key] * 6
+    
+    logger.info(f"Loaded {len(api_keys)} API keys from environment")
+    return api_keys
+
+# Initialize API keys
+API_KEYS = get_api_keys()
+current_key_index = 0
 
 def get_next_api_key() -> str:
     """Get next available API key (round-robin)"""
-    return API_KEYS[0]  # For now, use the same key
+    global current_key_index
+    if not API_KEYS:
+        raise ValueError("No API keys available")
+    key = API_KEYS[current_key_index % len(API_KEYS)]
+    current_key_index = (current_key_index + 1) % len(API_KEYS)
+    return key
 
 async def process_single_image(image_data: bytes, filename: str, image_id: str, max_retries: int = 3) -> ImageProcessingResult:
     """Process a single image with retry logic"""
