@@ -53,6 +53,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import ProjectWorkflow from "../components/ProjectWorkflow";
 import SearchPage from "../components/SearchPage";
+import ExpenseTracker from "../components/ExpenseTracker";
 
 // Dataset interface
 interface Dataset {
@@ -112,7 +113,7 @@ export default function Home() {
   // UI state
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState<
-    "extract" | "compare" | "tools" | "projects" | "search"
+    "extract" | "compare" | "tools" | "projects" | "search" | "expenses"
   >("extract");
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [showImageNaming, setShowImageNaming] = useState(false);
@@ -992,6 +993,7 @@ export default function Home() {
                   {activeTab === "projects" && "Project Management"}
                   {activeTab === "tools" && "Tools & Utilities"}
                   {activeTab === "search" && "Search Datasets"}
+                  {activeTab === "expenses" && "Expense Tracker & Budget Planner"}
                 </Title>
                 <Text
                   size="xs"
@@ -1011,6 +1013,8 @@ export default function Home() {
                   {activeTab === "tools" && "Additional tools and utilities"}
                   {activeTab === "search" &&
                     "Search across all datasets and master data"}
+                  {activeTab === "expenses" &&
+                    "Track expenses and get AI-powered budget recommendations"}
                 </Text>
               </Stack>
 
@@ -1760,6 +1764,10 @@ export default function Home() {
                   console.log("Exporting results:", results);
                 }}
               />
+            )}
+
+            {activeTab === "expenses" && (
+              <ExpenseTracker apiKeyStatuses={apiKeyStatuses} />
             )}
           </Stack>
         </Container>
